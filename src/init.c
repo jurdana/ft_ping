@@ -136,6 +136,12 @@ void	init_socket(t_ping *ping)
 		perror("ft_ping: setsockopt failure");
 		exit (1);
 	}
+	int broadcast = 1;
+	if (setsockopt(ping->sockfd, SOL_SOCKET, SO_BROADCAST, &broadcast, sizeof(broadcast)) < 0)
+	{
+		perror("ft_ping: setsockopt broadcast");
+		exit(1);
+	}
 
 	ping->id = getpid() & 0xFFFF;
 }
