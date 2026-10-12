@@ -51,6 +51,7 @@ void	decode_packet(t_ping *ping, char *recv_buffer, ssize_t recv_len)
 	gettimeofday(&time_recv, NULL);
 
 	int		type = icmp->type;
+	int		code = icmp->code;
 	int		id = ntohs(icmp->un.echo.id);
 	int		seq = ntohs(icmp->un.echo.sequence);
 	int		ttl = ip->ttl;
@@ -90,14 +91,52 @@ void	decode_packet(t_ping *ping, char *recv_buffer, ssize_t recv_len)
 		if (ping->verbose)
 		{
 			char	host[NI_MAXHOST + INET_ADDRSTRLEN + 4];
-			char	*msg;
+			char	*msg = NULL;
 
 			format_host(ping, ip, host, sizeof(host));
 			if (type == ICMP_TIME_EXCEEDED)
-				msg = "Time to live exceeded";
-			else
-				msg = "Destination unreachable";
+    			msg = "Time to live exceeded";
+			else if (type == ICMP_DEST_UNREACH)
+			{
+				if (code == ICMP_NET_UNREACH)
+					msg = "Destination Net Unreachable";
+				else if (code == ICMP_HOST_UNREACH)
+					msg = "Destination Host Unreachable";
+				else if (code == ICMP_PORT_UNREACH)
+					msg = "Destination Port Unreachable";
+				else
+					msg = "Destination Unreachable";
+			}
 			printf("%ld bytes from %s: %s\n", recv_len - ip_header_len, host, msg);
+			printf("IP Hdr Dump:\n");
+			unsigned char *orig = (unsigned char *)(recv_buffer + ip_header_len + sizeof(struct icmphdr));
+			printf(" ");
+			for (int i = 0; i < 20; i++)
+			{
+				printf("%02x", orig[i]);
+				if (i % 2 == 1)
+					printf(" ");
+			}
+			printf("\n");
+			printf("Vr HL TOS  Len   ID Flg  off TTL Pro  cks      Src\tDst\tData\n");
+			struct iphdr *oip = (struct iphdr *)orig;
+			printf(" %d  %d  %02x %04x %04x",
+				oip->version, oip->ihl, oip->tos,
+				ntohs(oip->tot_len), ntohs(oip->id));
+			uint16_t frag = ntohs(oip->frag_off);
+			printf("   %x %04x", frag >> 13, frag & 0x1FFF);
+			char osrc[INET_ADDRSTRLEN];
+			char odst[INET_ADDRSTRLEN];
+			inet_ntop(AF_INET, &oip->saddr, osrc, sizeof(osrc));
+			inet_ntop(AF_INET, &oip->daddr, odst, sizeof(odst));
+			printf("  %02x  %02x %04x %s  %s \n",
+				oip->ttl, oip->protocol, ntohs(oip->check), osrc, odst);
+			struct icmphdr *oicmp = (struct icmphdr *)(orig + oip->ihl * 4);
+			printf("ICMP: type %d, code %d, size %d, id 0x%04x, seq 0x%04x\n",
+				oicmp->type, oicmp->code,
+				ntohs(oip->tot_len) - (int)sizeof(struct iphdr),
+				ntohs(oicmp->un.echo.id), ntohs(oicmp->un.echo.sequence));
+
 		}
 	}
 }
