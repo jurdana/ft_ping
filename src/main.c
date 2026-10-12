@@ -53,6 +53,7 @@ int main(int argc, char **argv)
 
 	loop(&ping);
 
-
-	return (0);
+	if (ping.received > 0)
+		return (0);
+	return (1);
 }
