@@ -86,30 +86,31 @@ void	decode_packet(t_ping *ping, char *recv_buffer, ssize_t recv_len)
 					recv_len - ip_header_len, src_ip, seq, ttl);
 		}
 	}
-	else if (type == ICMP_TIME_EXCEEDED || type == ICMP_DEST_UNREACH)
+		else if (type == ICMP_TIME_EXCEEDED || type == ICMP_DEST_UNREACH)
 	{
+		char	host[NI_MAXHOST + INET_ADDRSTRLEN + 4];
+		char	*msg = NULL;
+
+		format_host(ping, ip, host, sizeof(host));
+		if (type == ICMP_TIME_EXCEEDED)
+			msg = "Time to live exceeded";
+		else if (type == ICMP_DEST_UNREACH)
+		{
+			if (code == ICMP_NET_UNREACH)
+				msg = "Destination Net Unreachable";
+			else if (code == ICMP_HOST_UNREACH)
+				msg = "Destination Host Unreachable";
+			else if (code == ICMP_PORT_UNREACH)
+				msg = "Destination Port Unreachable";
+			else
+				msg = "Destination Unreachable";
+		}
+		printf("%ld bytes from %s: %s\n", recv_len - ip_header_len, host, msg);
+
 		if (ping->verbose)
 		{
-			char	host[NI_MAXHOST + INET_ADDRSTRLEN + 4];
-			char	*msg = NULL;
-
-			format_host(ping, ip, host, sizeof(host));
-			if (type == ICMP_TIME_EXCEEDED)
-    			msg = "Time to live exceeded";
-			else if (type == ICMP_DEST_UNREACH)
-			{
-				if (code == ICMP_NET_UNREACH)
-					msg = "Destination Net Unreachable";
-				else if (code == ICMP_HOST_UNREACH)
-					msg = "Destination Host Unreachable";
-				else if (code == ICMP_PORT_UNREACH)
-					msg = "Destination Port Unreachable";
-				else
-					msg = "Destination Unreachable";
-			}
-			printf("%ld bytes from %s: %s\n", recv_len - ip_header_len, host, msg);
-			printf("IP Hdr Dump:\n");
 			unsigned char *orig = (unsigned char *)(recv_buffer + ip_header_len + sizeof(struct icmphdr));
+			printf("IP Hdr Dump:\n");
 			printf(" ");
 			for (int i = 0; i < 20; i++)
 			{
@@ -136,7 +137,6 @@ void	decode_packet(t_ping *ping, char *recv_buffer, ssize_t recv_len)
 				oicmp->type, oicmp->code,
 				ntohs(oip->tot_len) - (int)sizeof(struct iphdr),
 				ntohs(oicmp->un.echo.id), ntohs(oicmp->un.echo.sequence));
-
 		}
 	}
 }
