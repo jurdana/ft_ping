@@ -40,21 +40,26 @@ bool	is_number(char *str)
 
 int parse_number(char *optarg, long min, long max)
 {
-	long	val;
-	char	*endptr;
+    long    val;
+    char    *endptr;
 
-	val = strtol(optarg, &endptr, 10);
-	if (*endptr != '\0' || endptr == optarg)
-	{
-		fprintf(stderr, "ft_ping: invalid value (`%s' near `%s')\n", optarg, endptr);
-		exit(1);
-	}
-	if (val > max || val < min)
-	{
-		fprintf(stderr, "ft_ping: option value too big: %s\n", optarg);
-		exit(1);
-	}
-	return (int)val;
+    val = strtol(optarg, &endptr, 10);
+    if (*endptr != '\0' || endptr == optarg)
+    {
+        fprintf(stderr, "ft_ping: invalid value (`%s' near `%s')\n", optarg, endptr);
+        exit(1);
+    }
+    if (val < 0 || val > max)
+    {
+        fprintf(stderr, "ft_ping: option value too big: %s\n", optarg);
+        exit(1);
+    }
+    if (val < min)
+    {
+        fprintf(stderr, "ft_ping: option value too small: %s\n", optarg);
+        exit(1);
+    }
+    return (int)val;
 }
 
 void	parse_args(int argc, char **argv, t_ping *ping)
@@ -67,10 +72,14 @@ void	parse_args(int argc, char **argv, t_ping *ping)
 		switch (opt) {
 			case 'v': ping->verbose = true; break;
 			case 'n': ping->numeric = true; break;
-			case 'c': ping->count = parse_number(optarg, 0, INT_MAX); ping->has_count = true; break;
+			case 'c':
+				ping->count = parse_number(optarg, 0, INT_MAX);
+				if (ping->count > 0)
+					ping->has_count = true;
+				break;
 			case 's': ping->packet_size = parse_number(optarg, 0, 65399); break;
-			case 'w': ping->timeout = parse_number(optarg, 0, INT_MAX); ping->has_timeout = true; break;
-			case 'W': ping->linger = parse_number(optarg, 0, INT_MAX); break;
+			case 'w': ping->timeout = parse_number(optarg, 1, INT_MAX); ping->has_timeout = true; break;
+			case 'W': ping->linger = parse_number(optarg, 1, INT_MAX); break;
 			case ':':
 				fprintf(stderr, "ft_ping: option requires an argument -- '%c'\n", optopt);
 				fprintf(stderr, "Try 'ft_ping --help' or 'ft_ping --usage' for more information.\n");
