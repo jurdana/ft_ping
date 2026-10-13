@@ -38,17 +38,18 @@ bool	is_number(char *str)
 }
 
 
-int parse_number(char *optarg, long max)
+int parse_number(char *optarg, long min, long max)
 {
-	long val;
+	long	val;
+	char	*endptr;
 
-	if (!is_number(optarg))
+	val = strtol(optarg, &endptr, 10);
+	if (*endptr != '\0' || endptr == optarg)
 	{
-		fprintf(stderr, "ft_ping: invalid value (`%s' near `%s')\n", optarg, optarg);
+		fprintf(stderr, "ft_ping: invalid value (`%s' near `%s')\n", optarg, endptr);
 		exit(1);
 	}
-	val = strtol(optarg, NULL, 10);
-	if (val > max || val < 0)
+	if (val > max || val < min)
 	{
 		fprintf(stderr, "ft_ping: option value too big: %s\n", optarg);
 		exit(1);
@@ -66,10 +67,10 @@ void	parse_args(int argc, char **argv, t_ping *ping)
 		switch (opt) {
 			case 'v': ping->verbose = true; break;
 			case 'n': ping->numeric = true; break;
-			case 'c': ping->count = parse_number(optarg, INT_MAX); ping->has_count = true; break;
-			case 's': ping->packet_size = parse_number(optarg, 65399); break;
-			case 'w': ping->timeout = parse_number(optarg, INT_MAX); ping->has_timeout = true; break;
-			case 'W': ping->linger = parse_number(optarg, INT_MAX); break;
+			case 'c': ping->count = parse_number(optarg, 0, INT_MAX); ping->has_count = true; break;
+			case 's': ping->packet_size = parse_number(optarg, 0, 65399); break;
+			case 'w': ping->timeout = parse_number(optarg, 0, INT_MAX); ping->has_timeout = true; break;
+			case 'W': ping->linger = parse_number(optarg, 0, INT_MAX); break;
 			case ':':
 				fprintf(stderr, "ft_ping: option requires an argument -- '%c'\n", optopt);
 				fprintf(stderr, "Try 'ft_ping --help' or 'ft_ping --usage' for more information.\n");
@@ -128,7 +129,6 @@ void	init_socket(t_ping *ping)
 		fprintf(stderr, "ft_ping: Lacking privilege for icmp socket.\n");
 		exit(1);
 	}
-
 	tv.tv_sec = ping->linger;
 	tv.tv_usec = 0;
 	if (setsockopt(ping->sockfd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0)
@@ -142,6 +142,11 @@ void	init_socket(t_ping *ping)
 		perror("ft_ping: setsockopt broadcast");
 		exit(1);
 	}
-
+	int ttl = PING_TTL;
+	if (setsockopt(ping->sockfd, IPPROTO_IP, IP_TTL, &ttl, sizeof(ttl)) < 0)
+	{
+		perror("ft_ping: setsockopt ttl");
+		exit(1);
+	}
 	ping->id = getpid() & 0xFFFF;
 }

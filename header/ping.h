@@ -20,6 +20,7 @@
 #include <signal.h>
 #include <limits.h>
 
+# define PING_TTL 64
 
 typedef struct s_ping
 {
@@ -60,7 +61,7 @@ void	loop(t_ping *ping);
 void	init(t_ping *ping);
 void	print_help(void);
 bool	is_number(char *str);
-int		parse_number(char *optarg, long max);
+int		parse_number(char *optarg, long min, long max);
 void	parse_args(int argc, char **argv, t_ping *ping);
 void	init_hostname(t_ping *ping);
 void	init_socket(t_ping *ping);
