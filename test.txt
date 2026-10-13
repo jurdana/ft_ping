@@ -1,0 +1,37 @@
+
+./ft_ping 8.8.8.8 
+
+sudo ./ft_ping -?
+
+sudo ./ft_ping 8.8.8.8
+
+sudo ./ft_ping -c 3 8.8.8.8
+
+sudo ./ft_ping -c 2 google.com
+
+sudo ./ft_ping nimportequoi.invalid
+
+sudo ./ft_ping -v -c 2 10.0.2.99
+
+sudo ./ft_ping -v google.com
+
+sudo ./ft_ping -s 20 -c 1 8.8.8.8
+
+sudo ./ft_ping -v -c 1 10.0.2.99
+
+sudo ./ft_ping -v -n -c 1 10.0.2.99
+
+time sudo ./ft_ping -w 3 8.8.8.8
+
+time sudo ./ft_ping -W 1 -c 1 10.255.255.1
+
+time sudo ./ft_ping -W 3 -c 1 10.255.255.1
+
+ttl diff
+# terminal 1
+sudo tcpdump -i any -n -v icmp
+
+# terminal 2
+sudo ./ft_ping -c 2 8.8.8.8
+
+sudo ~/ref/inetutils-2.0/ping/ping

@@ -2,13 +2,15 @@
 
 void	receive_packet(t_ping *ping)
 {
-	char recv_buffer[1024];
-	ssize_t recv_len = recvfrom(ping->sockfd, recv_buffer, sizeof(recv_buffer), 0, NULL, NULL);
-	
-	if (recv_len <= 0)
-		return ;
+	char	recv_buffer[1024];
+	ssize_t	recv_len;
 
-	decode_packet(ping, recv_buffer, recv_len);
+	while ((recv_len = recvfrom(ping->sockfd, recv_buffer,
+			sizeof(recv_buffer), 0, NULL, NULL)) > 0)
+	{
+		if (decode_packet(ping, recv_buffer, recv_len) == 1)
+			return ;
+	}
 }
 
 void	format_host(t_ping *ping, struct iphdr *ip, char *out, size_t out_size)
@@ -37,13 +39,13 @@ void	format_host(t_ping *ping, struct iphdr *ip, char *out, size_t out_size)
 }
 
 
-void	decode_packet(t_ping *ping, char *recv_buffer, ssize_t recv_len)
+int	decode_packet(t_ping *ping, char *recv_buffer, ssize_t recv_len)
 {
 	struct iphdr	*ip = (struct iphdr*)recv_buffer;
 	int				ip_header_len = ip->ihl * 4;
 
 	if (recv_len < ip_header_len + (int)sizeof(struct icmphdr))
-		return;
+		return (0);
 
 	struct icmphdr	*icmp = (struct icmphdr *)(recv_buffer + ip_header_len);
 	struct timeval	time_recv;
@@ -85,8 +87,9 @@ void	decode_packet(t_ping *ping, char *recv_buffer, ssize_t recv_len)
 			printf("%ld bytes from %s: icmp_seq=%d ttl=%d\n",
 					recv_len - ip_header_len, src_ip, seq, ttl);
 		}
+		return (1);
 	}
-		else if (type == ICMP_TIME_EXCEEDED || type == ICMP_DEST_UNREACH)
+	else if (type == ICMP_TIME_EXCEEDED || type == ICMP_DEST_UNREACH)
 	{
 		char	host[NI_MAXHOST + INET_ADDRSTRLEN + 4];
 		char	*msg = NULL;
@@ -138,5 +141,7 @@ void	decode_packet(t_ping *ping, char *recv_buffer, ssize_t recv_len)
 				ntohs(oip->tot_len) - (int)sizeof(struct iphdr),
 				ntohs(oicmp->un.echo.id), ntohs(oicmp->un.echo.sequence));
 		}
+		return (1);
 	}
+	return (0);
 }

@@ -77,7 +77,7 @@ void	send_packet(t_ping *ping, char *buffer);
 // RECEPTION.C
 void	receive_packet(t_ping *ping);
 void	format_host(t_ping *ping, struct iphdr *ip, char *out, size_t out_size);
-void	decode_packet(t_ping *ping, char *recv_buffer, ssize_t recv_len);
+int		decode_packet(t_ping *ping, char *recv_buffer, ssize_t recv_len);
 
 // PRINT.C
 void	print_header(t_ping *ping);
