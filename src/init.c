@@ -1,5 +1,12 @@
 #include "../header/ping.h"
 
+
+/*
+init - sets the default configuration values before argument parsing.
+packet_size (56) and linger (10s) are inetutils' defaults, overwritten
+if -s / -W are given. rtt_min starts at DBL_MAX so the first measured
+RTT always becomes the minimum.
+*/
 void	init(t_ping *ping)
 {
 	ping->packet_size = 56;
@@ -7,7 +14,10 @@ void	init(t_ping *ping)
 	ping->linger = 10;
 }
 
-
+/*
+print_help - prints the usage/help message and the list of supported
+options, then returns. Called when -? is passed.
+*/
 void	print_help(void)
 {
 	printf("Usage: ft_ping [OPTION...] HOST ...\n");
@@ -22,22 +32,13 @@ void	print_help(void)
 	printf("  -?                         give this help list\n");
 }
 
-bool	is_number(char *str)
-{
-	int i = 0;
-
-	if (!str || !str[0])
-		return (false);
-	while(str[i])
-	{
-		if (!isdigit(str[i]))
-			return (false);
-		i++;
-	}
-	return (true);
-}
-
-
+/*
+parse_number - converts a numeric option argument to an int using
+strtol, validation it against [min, max]. Exits with code 1 and an
+inetutils-style error on non-numeric input, residue after the number,
+a value above max (or negative), or a value below min.
+Returns the parsed value as an int on success.
+*/
 int parse_number(char *optarg, long min, long max)
 {
     long    val;
@@ -62,6 +63,13 @@ int parse_number(char *optarg, long min, long max)
     return (int)val;
 }
 
+/*
+parse_args - parses the command linme options with getopt and fills the
+t_ping config (verbose, numeric, count, packet_size, timeout, linger).
+Handles -? (help, exit 0), missing option arguments and unknown
+options (usage error, exit 64). Stores the destination host or exits
+64 if no host operand is given.
+*/
 void	parse_args(int argc, char **argv, t_ping *ping)
 {
 	int opt;
@@ -106,7 +114,11 @@ void	parse_args(int argc, char **argv, t_ping *ping)
 	}
 }
 
-
+/*
+init_hostname - resolves the destination (IPv4 address or hostname) to
+a sockaddr_in via getaddrinfo and stores it in ping->dest_addr. Exits
+with code 1 and "unknow host" if resolution fails.
+*/
 void	init_hostname(t_ping *ping)
 {
 	int				status;
@@ -128,6 +140,13 @@ void	init_hostname(t_ping *ping)
 }
 
 
+/*
+init_socket - creates the raw ICMP socket (requires root) and dests its
+options: SO_RCVTIMEO (receive timeout = linger/-W), SO_BROADCAST (to 
+allow pinging broadcast addresses) and IP_TTL (outgoing TTL). Also sets
+ping->id to the low 16 bits of the PID to recognise our own replies.
+Exits with code 1 on any failure.
+*/
 void	init_socket(t_ping *ping)
 {
 	struct timeval tv;

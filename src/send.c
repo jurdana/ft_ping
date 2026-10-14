@@ -1,5 +1,12 @@
 #include "../header/ping.h"
 
+/*
+send_packet - builds a fresh ICMP echo request into buffer (new
+sequence number, timestamp and checksum) and sends it to the resolved
+destination with sendto. On success the transmitted counter is
+incremented; on failure it prints a sendto error and leaves the counter
+unchanged.
+*/
 void	send_packet(t_ping *ping, char *buffer)
 {
 	build_packet(ping, buffer);

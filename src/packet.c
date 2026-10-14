@@ -1,5 +1,11 @@
 #include "../header/ping.h"
 
+/*
+checksum - computes the 16-bit Internet checksum (RFC 1071) over len
+bytes: sums the data as 16-bit words, adds the trailing byte if the
+length is odd, folds the carries back into the low 16 bits, and returns
+the one's complement of the result.
+*/
 uint16_t	checksum(void *data, int len)
 {
 	uint16_t *buffer = data;
@@ -17,6 +23,13 @@ uint16_t	checksum(void *data, int len)
 	return (uint16_t)~sum;
 }
 
+/*
+build_packet - fills the ICMP echo request in buffer: a payload of
+packet_size bytes set to 0,1,2,... with a gettimeofday timestamp written
+at its start when it is large enough (used to compute the RTT on reply),
+then the ICMP header (type 8, id and sequence in network byte order).
+The checksum field is zeroed and then computed over the whole packet.
+*/
 void	build_packet(t_ping *ping, char *buffer)
 {
 

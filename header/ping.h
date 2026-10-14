@@ -20,8 +20,27 @@
 #include <signal.h>
 #include <limits.h>
 
+/* Outgoing TTL for sent packets. Set to a low value (e.g. 1) to trigger
+ICMP Time Exceeded replies and demonstrate -v verbose output; keep at 64
+for normal operation.
+*/
 # define PING_TTL 64
 
+
+/*
+t_ping - holds the whole program state (one instance, on the stack in
+main):
+verbose/numeric/has_count/has_timeout : flags set from -v/-n/-c/-w
+count/packet_size/timeout/linger      : option values (-c/-s/-w/-W)
+id                                    : our ICMP id (pid & 0xFFFF)
+sockfd                                : raw ICMP socket
+seq                                   : current sequence number
+transmitted/received                  : packet counters for stats
+rtt_min/max/sum/sum_sq/rtt_count      : RTT accumulators for stddev
+dest                                  : destination as given on the CLI
+dest_addr                             : resolved destination address
+start_time                            : loop start, used by -w timeout
+*/
 typedef struct s_ping
 {
 	bool	verbose;
@@ -60,7 +79,6 @@ void	loop(t_ping *ping);
 // INIT.C
 void	init(t_ping *ping);
 void	print_help(void);
-bool	is_number(char *str);
 int		parse_number(char *optarg, long min, long max);
 void	parse_args(int argc, char **argv, t_ping *ping);
 void	init_hostname(t_ping *ping);

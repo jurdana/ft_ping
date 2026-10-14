@@ -1,5 +1,9 @@
 #include "../header/ping.h"
 
+/*
+print_header - prints the initial "PING host (ip): N data bytes" line.
+In verbose mode (-v) it also appends the ICMP id in hex and decimal.
+*/
 void	print_header(t_ping *ping)
 {
 	char ip_str[INET_ADDRSTRLEN];
@@ -14,6 +18,13 @@ void	print_header(t_ping *ping)
 
 }
 
+/*
+print_stats - prints the final statistics block: packets transmitted,
+received and the packet-loss percentage. When at least one RTT was
+measured, it also prints round-trip min/avg/max/stddev, where avg is the
+mean, and stddev is derived from accumulated sum and sum of squares
+of the RTTs (swrt of the variance).
+*/
 void	print_stats(t_ping *ping)
 {
 	double loss;

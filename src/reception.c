@@ -1,5 +1,12 @@
 #include "../header/ping.h"
 
+/*
+receive_packet - reads from the raw socket until a relevant one
+is handled (our echo reply or an ICMP error), skipping packets that are
+not for us (notably our own echo request echoed back on loopback). The
+loop stops when recvfrom returns <= 0, which happens on the SO_RCVTIMEO
+receive timeout.
+*/
 void	receive_packet(t_ping *ping)
 {
 	char	recv_buffer[1024];
@@ -13,6 +20,12 @@ void	receive_packet(t_ping *ping)
 	}
 }
 
+/*
+format_host - builds the textual representation of the sources address
+into out. With -n (numeric) it writes the bare IP; otherwise it attempts
+a reverse DNS lookup (getnameinfo) and writes "hostname (ip)", falling
+back to the bare IP if resolution fails.
+*/
 void	format_host(t_ping *ping, struct iphdr *ip, char *out, size_t out_size)
 {
 	char				src_ip[INET_ADDRSTRLEN];
@@ -38,7 +51,16 @@ void	format_host(t_ping *ping, struct iphdr *ip, char *out, size_t out_size)
 		snprintf(out, out_size, "%s", src_ip);
 }
 
-
+/*
+decode_packet - interprets one received packet. it skips the IP header
+(using IHL) to reach the ICMP header. For an echo reply carrying our id,
+it updates the received count and RTT stats and prints the reply line
+(with timne= only when the payload holds the timestamps), returning 1.
+For an ICMP Time Exceeded or Destination Unreachable,it prints the error
+line andm in verbose mode, a dump of the quoted original IP?ICMP header,
+returning 1. Any other packet (too short, or not ours, e.g. our own echo
+request) returns 0 so the caller keeps reading.
+*/
 int	decode_packet(t_ping *ping, char *recv_buffer, ssize_t recv_len)
 {
 	struct iphdr	*ip = (struct iphdr*)recv_buffer;
